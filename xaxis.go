@@ -141,48 +141,50 @@ func (xa XAxis) Render(r Renderer, canvasBox Box, ra Range, defaults Style, tick
 
 	var tx, ty int
 	var maxTextHeight int
-	for index, t := range ticks {
-		v := t.Value
-		lx := ra.Translate(v)
+	if !tickStyle.Hidden {
+		for index, t := range ticks {
+			v := t.Value
+			lx := ra.Translate(v)
 
-		tx = canvasBox.Left + lx
+			tx = canvasBox.Left + lx
 
-		tickStyle.GetStrokeOptions().WriteToRenderer(r)
-		r.MoveTo(tx, canvasBox.Bottom)
-		r.LineTo(tx, canvasBox.Bottom+DefaultVerticalTickHeight)
-		r.Stroke()
+			tickStyle.GetStrokeOptions().WriteToRenderer(r)
+			r.MoveTo(tx, canvasBox.Bottom)
+			r.LineTo(tx, canvasBox.Bottom+DefaultVerticalTickHeight)
+			r.Stroke()
 
-		tickWithAxisStyle := xa.TickStyle.InheritFrom(xa.Style.InheritFrom(defaults))
-		tb := Draw.MeasureText(r, t.Label, tickWithAxisStyle)
+			tickWithAxisStyle := xa.TickStyle.InheritFrom(xa.Style.InheritFrom(defaults))
+			tb := Draw.MeasureText(r, t.Label, tickWithAxisStyle)
 
-		switch tp {
-		case TickPositionUnderTick, TickPositionUnset:
-			if tickStyle.TextRotationDegrees == 0 {
-				tx = tx - tb.Width()>>1
-				ty = canvasBox.Bottom + DefaultXAxisMargin + tb.Height()
-			} else {
-				ty = canvasBox.Bottom + (2 * DefaultXAxisMargin)
+			switch tp {
+			case TickPositionUnderTick, TickPositionUnset:
+				if tickStyle.TextRotationDegrees == 0 {
+					tx = tx - tb.Width()>>1
+					ty = canvasBox.Bottom + DefaultXAxisMargin + tb.Height()
+				} else {
+					ty = canvasBox.Bottom + (2 * DefaultXAxisMargin)
+				}
+				Draw.Text(r, t.Label, tx, ty, tickWithAxisStyle)
+				maxTextHeight = MaxInt(maxTextHeight, tb.Height())
+				break
+			case TickPositionBetweenTicks:
+				if index > 0 {
+					llx := ra.Translate(ticks[index-1].Value)
+					ltx := canvasBox.Left + llx
+					finalTickStyle := tickWithAxisStyle.InheritFrom(Style{TextHorizontalAlign: TextHorizontalAlignCenter})
+
+					Draw.TextWithin(r, t.Label, Box{
+						Left:   ltx,
+						Right:  tx,
+						Top:    canvasBox.Bottom + DefaultXAxisMargin,
+						Bottom: canvasBox.Bottom + DefaultXAxisMargin,
+					}, finalTickStyle)
+
+					ftb := Text.MeasureLines(r, Text.WrapFit(r, t.Label, tx-ltx, finalTickStyle), finalTickStyle)
+					maxTextHeight = MaxInt(maxTextHeight, ftb.Height())
+				}
+				break
 			}
-			Draw.Text(r, t.Label, tx, ty, tickWithAxisStyle)
-			maxTextHeight = MaxInt(maxTextHeight, tb.Height())
-			break
-		case TickPositionBetweenTicks:
-			if index > 0 {
-				llx := ra.Translate(ticks[index-1].Value)
-				ltx := canvasBox.Left + llx
-				finalTickStyle := tickWithAxisStyle.InheritFrom(Style{TextHorizontalAlign: TextHorizontalAlignCenter})
-
-				Draw.TextWithin(r, t.Label, Box{
-					Left:   ltx,
-					Right:  tx,
-					Top:    canvasBox.Bottom + DefaultXAxisMargin,
-					Bottom: canvasBox.Bottom + DefaultXAxisMargin,
-				}, finalTickStyle)
-
-				ftb := Text.MeasureLines(r, Text.WrapFit(r, t.Label, tx-ltx, finalTickStyle), finalTickStyle)
-				maxTextHeight = MaxInt(maxTextHeight, ftb.Height())
-			}
-			break
 		}
 	}
 
