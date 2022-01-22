@@ -5,7 +5,7 @@ package main
 import (
 	"os"
 
-	chart "github.com/wcharczuk/go-chart/v2"
+	chart "github.com/SimonLovskog/go-chart/v2"
 )
 
 func main() {
@@ -16,6 +16,11 @@ func main() {
 	*/
 
 	graph := chart.Chart{
+		XAxis: chart.XAxis{
+			TickStyle: chart.Style{
+				Hidden: true,
+			},
+		},
 		Series: []chart.Series{
 			chart.ContinuousSeries{
 				Style: chart.Style{
